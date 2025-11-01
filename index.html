@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Telegram → Firebase Feed (GitHub Pages)</title>
+  <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: "Poppins", sans-serif; background:#0f0f0f; color:#fff; padding:20px; max-width:900px; margin:0 auto; }
+    h1 { text-align:center; color:#00ff9d; margin-bottom:10px; }
+    #status { text-align:center; margin-bottom:12px; color:#9aa; font-size:14px; }
+    .message { opacity:0; transform:translateY(8px); background: rgba(255,255,255,0.03); padding:10px 14px; margin:8px 0; border-radius:10px; transition:all .38s ease; }
+    .message.show { opacity:1; transform:translateY(0); }
+    .user { font-weight:700; color:#00ffb3; }
+    .text { margin-top:6px; white-space:pre-wrap; word-break:break-word; color:#e6e6e6; }
+  </style>
+</head>
+<body>
+  <h1>💬 Telegram Live Feed</h1>
+  <div id="status">Menghubungkan...</div>
+  <div id="chat"></div>
+
+  <!-- Firebase SDK (module) -->
+  <script type="module">
+    // --- GANTI nilai di bawah dengan konfigurasi Realtime Database project kamu ---
+    const FIREBASE_DATABASE_URL = "https://your-project-id.firebaseio.com"; // <-- Ganti ini
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = { databaseURL: FIREBASE_DATABASE_URL };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const chatBox = document.getElementById("chat");
+    const statusEl = document.getElementById("status");
+
+    // Twemoji will convert native emoji to iOS-like SVGs
+    function renderSnapshot(snapshot) {
+      chatBox.innerHTML = "";
+      if (!snapshot.exists()) {
+        statusEl.textContent = "Belum ada pesan";
+        return;
+      }
+      statusEl.textContent = "Terhubung — menampilkan pesan realtime";
+      snapshot.forEach(child => {
+        const msg = child.val();
+        const div = document.createElement("div");
+        div.className = "message";
+        div.innerHTML = `<div class="user">@${escapeHtml(msg.user||'anon')}</div>
+                         <div class="text">${escapeHtml(msg.text||'')}</div>`;
+        chatBox.appendChild(div);
+        // animate in
+        setTimeout(()=>div.classList.add('show'),50);
+        // parse emoji
+        twemoji.parse(div);
+      });
+    }
+
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // Listen to /messages node
+    const messagesRef = ref(db, "messages");
+    onValue(messagesRef, (snap) => {
+      renderSnapshot(snap);
+    }, (err) => {
+      statusEl.textContent = "Gagal konek ke Firebase: " + err.message;
+      console.error(err);
+    });
+
+  </script>
+</body>
+</html>
