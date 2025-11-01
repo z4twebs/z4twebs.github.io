@@ -1,72 +1,486 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Telegram → Firebase Feed (GitHub Pages)</title>
+  <meta charset="UTF-8">
+  <title>Telegram Channel Feed</title>
   <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
   <style>
-    body { font-family: "Poppins", sans-serif; background:#0f0f0f; color:#fff; padding:20px; max-width:900px; margin:0 auto; }
-    h1 { text-align:center; color:#00ff9d; margin-bottom:10px; }
-    #status { text-align:center; margin-bottom:12px; color:#9aa; font-size:14px; }
-    .message { opacity:0; transform:translateY(8px); background: rgba(255,255,255,0.03); padding:10px 14px; margin:8px 0; border-radius:10px; transition:all .38s ease; }
-    .message.show { opacity:1; transform:translateY(0); }
-    .user { font-weight:700; color:#00ffb3; }
-    .text { margin-top:6px; white-space:pre-wrap; word-break:break-word; color:#e6e6e6; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+    /* CSS Variables for Theming */
+    :root {
+      --bg-color: #eef2f7;
+      --card-bg-color: #ffffff;
+      --text-color: #1a202c;
+      --text-color-secondary: #718096;
+      --border-color: #edf2f7;
+      --accent-color: #3182ce;
+      --code-bg-color: #1a202c;
+      --code-text-color: #e2e8f0;
+      --menu-bg-color: #ffffff;
+      --shadow-color: rgba(0, 0, 0, 0.05);
+    }
+
+    body.theme-dark {
+      --bg-color: #1a202c;
+      --card-bg-color: #2d3748;
+      --text-color: #e2e8f0;
+      --text-color-secondary: #a0aec0;
+      --border-color: #4a5568;
+      --accent-color: #63b3ed;
+      --code-bg-color: #0d1117;
+      --code-text-color: #c9d1d9;
+      --menu-bg-color: #4a5568;
+      --shadow-color: rgba(0, 0, 0, 0.2);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* Header and Controls */
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      margin: 0;
+      color: var(--text-color);
+    }
+
+    .header p {
+      font-size: 1rem;
+      color: var(--text-color-secondary);
+    }
+
+    .controls {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+      gap: 10px;
+    }
+
+    .control-btn {
+      background: var(--card-bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px var(--shadow-color);
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px var(--shadow-color);
+    }
+
+    .control-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--text-color-secondary);
+    }
+
+    /* Settings Menu & Boost Popup */
+    .settings-menu, .boost-popup {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: var(--menu-bg-color);
+      border-radius: 8px;
+      box-shadow: 0 8px 30px var(--shadow-color);
+      padding: 8px;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .settings-menu.active, .boost-popup.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .settings-menu button, .boost-popup button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 10px;
+      background: none;
+      border: none;
+      color: var(--text-color);
+      text-align: left;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    
+    .settings-menu button:hover, .boost-popup button:hover {
+      background-color: rgba(0,0,0,0.1);
+    }
+
+    .settings-menu svg, .boost-popup svg {
+      width: 18px;
+      height: 18px;
+      margin-right: 12px;
+      fill: var(--text-color-secondary);
+    }
+
+    .boost-popup input {
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 8px;
+      border-radius: 6px;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    /* Main Feed Container */
+    .feed-container {
+      background: var(--card-bg-color);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px var(--shadow-color);
+      padding: 20px;
+      transition: background 0.3s;
+    }
+    .feed-container.archived {
+        display: none;
+    }
+
+    .msg {
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .msg:last-child { border-bottom: none; margin-bottom: 0; }
+    .msg.show { opacity: 1; transform: translateY(0); }
+
+    /* Message Styling */
+    .msg-header { display: flex; align-items: center; margin-bottom: 12px; }
+    .profile-pic { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; pointer-events: none; }
+    .user-info { display: flex; flex-direction: column; }
+    .user { font-weight: 700; display: flex; align-items: center; }
+    .owner-badge { display: flex; align-items: center; font-size: 0.8rem; font-weight: 500; color: #4a5568; margin-left: 8px; }
+    .owner-badge svg { width: 16px; height: 16px; margin-right: 4px; fill: #a0aec0; }
+    .timestamp { font-size: 0.8rem; color: var(--text-color-secondary); }
+    .text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; font-size: 0.95rem; }
+    .text a { color: var(--accent-color); text-decoration: none; font-weight: 500; }
+    .text a:hover { text-decoration: underline; }
+    .media { margin-top: 15px; }
+    .media img, .media video { max-width: 100%; border-radius: 8px; pointer-events: none; }
+    
+    /* Reactions */
+    .reactions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 15px;
+    }
+    .reaction {
+        display: flex;
+        align-items: center;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        padding: 4px 10px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .reaction:hover {
+        background-color: var(--border-color);
+    }
+    .reaction img.emoji {
+        width: 1.2em;
+        height: 1.2em;
+        margin-right: 6px;
+    }
+    .reaction-count {
+        font-weight: 500;
+        color: var(--text-color-secondary);
+    }
+
+    /* Code Block */
+    .code-block { background: var(--code-bg-color); color: var(--code-text-color); padding: 15px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 0.9rem; position: relative; white-space: pre-wrap; word-break: break-all; }
+    .copy-btn { position: absolute; top: 10px; right: 10px; background: #4a5568; border: none; color: #fff; padding: 5px; border-radius: 6px; cursor: pointer; display: flex; opacity: 0.8; transition: opacity 0.2s; }
+    .copy-btn:hover { opacity: 1; }
+    .copy-btn svg { width: 18px; height: 18px; }
+
+    /* Notification */
+    .notification { display: flex; align-items: center; justify-content: center; padding: 20px; font-size: 1rem; color: var(--text-color-secondary); }
+    .notification svg { width: 24px; height: 24px; margin-right: 12px; fill: currentColor; }
   </style>
 </head>
 <body>
-  <h1>💬 Telegram Live Feed</h1>
-  <div id="status">Menghubungkan...</div>
-  <div id="chat"></div>
+  <div class="header">
+    <h1>Channel Feed</h1>
+    <p id="channel-title">Memuat nama channel...</p>
+    <div class="controls">
+      <div style="position: relative;">
+        <button class="control-btn" id="boost-btn" title="Boost Channel">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><style>.a{fill:none;stroke:#000;stroke-linecap:round;stroke-linejoin:round;}</style></defs><path class="a" d="M37.42,14.7a4.1,4.1,0,0,0-4.08-4.11h0a4.11,4.11,0,1,0,0,8.21,4.09,4.09,0,0,0,2.88-1.18,4,4,0,0,0,1.19-2.92ZM16.1,29.44l-2-2L7.9,29.42H7.7a.69.69,0,0,1-.53-.2L5.72,27.79a.7.7,0,0,1-.11-.88L7.3,24a13,13,0,0,1,10.07-6.39l2.49-.22q2.17-2.58,4-4.42A26.4,26.4,0,0,1,32,7.12a25.63,25.63,0,0,1,9.77-1.61.79.79,0,0,1,.54.22.68.68,0,0,1,.22.5A25.27,25.27,0,0,1,40.78,16,25.79,25.79,0,0,1,35,24.16c-1.23,1.24-2.71,2.57-4.42,4l-.22,2.48A13,13,0,0,1,24,40.72l-2.89,1.69a.78.78,0,0,1-.37.09.82.82,0,0,1-.52-.2l-1.45-1.46a.69.69,0,0,1-.18-.71l1.93-6.27-1.94-1.94"/><line class="a" x1="30.62" y1="28.16" x2="20.52" y2="33.86"/><line class="a" x1="19.86" y1="17.39" x2="14.15" y2="27.49"/><path class="a" d="M13,35c4-.74,11.1-7.4,11.93-11.93C20.37,23.94,13.71,31,13,35Z"/></svg>
+        </button>
+        <div class="boost-popup" id="boost-popup">
+          <input type="text" value="https://t.me/boost/ItzXery" readonly>
+          <button id="copy-boost-link-btn">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-5zm0 16H8V7h11v14z"/></svg>
+            Salin Link
+          </button>
+        </div>
+      </div>
+      <div style="position: relative;">
+        <button class="control-btn" id="settings-btn" title="Pengaturan">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+        </button>
+        <div class="settings-menu" id="settings-menu">
+          <button id="theme-toggle-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
+            Ganti Tema
+          </button>
+          <button id="archive-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.59L16 13.5z"/></svg>
+            Arsipkan
+          </button>
+          <button id="clear-feed-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            Hapus Pesan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="feed" class="feed-container">
+    <div class="notification" id="loading-indicator">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity=".2"/><path d="M12 4a8 8 0 0 1 8 8h-2a6 6 0 0 0-6-6z"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>
+      <span>Mengambil pesan...</span>
+    </div>
+  </div>
 
-  <!-- Firebase SDK (module) -->
-  <script type="module">
-    // --- GANTI nilai di bawah dengan konfigurasi Realtime Database project kamu ---
-    const FIREBASE_DATABASE_URL = "https://your-project-id.firebaseio.com"; // <-- Ganti ini
+  <script>
+    const TOKEN = "8251989506:AAG_U_75djuspDluumsuptnG7ngusnVye0A"; // 🔹 Ganti dengan token bot kamu
+    const API_BASE_URL = `https://api.telegram.org/bot${TOKEN}`;
+    const PROXY_URL = "https://api.allorigins.win/get?url=";
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    let channelInfo = {};
+    let isFirstLoad = true;
 
-    const firebaseConfig = { databaseURL: FIREBASE_DATABASE_URL };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const chatBox = document.getElementById("chat");
-    const statusEl = document.getElementById("status");
+    // --- ICONS (Used in JS) ---
+    const ICONS = {
+      error: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`,
+      crown: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-1h14v1z"/></svg>`,
+      copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-5zm0 16H8V7h11v14z"/></svg>`,
+      check: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`
+    };
 
-    // Twemoji will convert native emoji to iOS-like SVGs
-    function renderSnapshot(snapshot) {
-      chatBox.innerHTML = "";
-      if (!snapshot.exists()) {
-        statusEl.textContent = "Belum ada pesan";
-        return;
-      }
-      statusEl.textContent = "Terhubung — menampilkan pesan realtime";
-      snapshot.forEach(child => {
-        const msg = child.val();
-        const div = document.createElement("div");
-        div.className = "message";
-        div.innerHTML = `<div class="user">@${escapeHtml(msg.user||'anon')}</div>
-                         <div class="text">${escapeHtml(msg.text||'')}</div>`;
-        chatBox.appendChild(div);
-        // animate in
-        setTimeout(()=>div.classList.add('show'),50);
-        // parse emoji
-        twemoji.parse(div);
-      });
+    // --- DOM Elements ---
+    const feed = document.getElementById("feed");
+    const settingsBtn = document.getElementById("settings-btn");
+    const settingsMenu = document.getElementById("settings-menu");
+    const boostBtn = document.getElementById("boost-btn");
+    const boostPopup = document.getElementById("boost-popup");
+    
+    // --- Helper Functions ---
+    function setNotification(icon, message) {
+        feed.innerHTML = `<div class="notification">${icon}<span>${message}</span></div>`;
     }
 
-    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    async function fetchFromAPI(method) {
+        const res = await fetch(PROXY_URL + encodeURIComponent(`${API_BASE_URL}/${method}`));
+        if (!res.ok) throw new Error(`Proxy error! Status: ${res.status}`);
+        const json = await res.json();
+        if (json.contents === null) throw new Error("Proxy returned empty content. Check API URL/Token or proxy status.");
+        const data = JSON.parse(json.contents);
+        if (!data.ok) throw new Error(`Telegram API error: ${data.description}`);
+        return data.result;
+    }
 
-    // Listen to /messages node
-    const messagesRef = ref(db, "messages");
-    onValue(messagesRef, (snap) => {
-      renderSnapshot(snap);
-    }, (err) => {
-      statusEl.textContent = "Gagal konek ke Firebase: " + err.message;
-      console.error(err);
+    function formatText(text) {
+        if (!text) return "";
+        let formattedText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+        formattedText = formattedText.replace(/loadstring\(([\s\S]*?)\)/g, (match, code) => {
+            const uniqueId = `code-${Math.random().toString(36).substr(2, 9)}`;
+            return `<div class="code-block" id="${uniqueId}"><button class="copy-btn" onclick="copyToClipboard('${uniqueId}')" title="Salin kode">${ICONS.copy}</button><pre><code>loadstring(${code.trim()})</code></pre></div>`;
+        });
+        return formattedText.replace(/\n/g, "<br>");
+    }
+
+    window.copyToClipboard = function(elementId) {
+        const codeBlock = document.getElementById(elementId);
+        const code = codeBlock.querySelector('code').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+            const button = codeBlock.querySelector('.copy-btn');
+            const originalIcon = button.innerHTML;
+            button.innerHTML = ICONS.check;
+            setTimeout(() => { button.innerHTML = originalIcon; }, 2000);
+        });
+    }
+
+    // --- Main Logic ---
+    async function loadMessages() {
+      try {
+        const updates = await fetchFromAPI('getUpdates?allowed_updates=["channel_post"]&limit=50');
+        
+        if (isFirstLoad) {
+            const loadingIndicator = document.getElementById("loading-indicator");
+            if(loadingIndicator) loadingIndicator.remove();
+            isFirstLoad = false;
+        }
+
+        const channelPosts = updates.map(u => u.channel_post).filter(Boolean);
+
+        if (channelPosts.length > 0 && !channelInfo.id) {
+            const firstPost = channelPosts[0];
+            channelInfo = { id: firstPost.chat.id, title: firstPost.chat.title };
+            document.getElementById("channel-title").textContent = `Pesan terbaru dari ${channelInfo.title}`;
+            
+            try {
+                const chatDetails = await fetchFromAPI(`getChat?chat_id=${channelInfo.id}`);
+                if (chatDetails.photo) {
+                    const file = await fetchFromAPI(`getFile?file_id=${chatDetails.photo.small_file_id}`);
+                    channelInfo.profile_photo_url = `https://api.telegram.org/file/bot${TOKEN}/${file.file_path}`;
+                }
+            } catch (e) { console.warn("Tidak dapat mengambil foto profil channel:", e.message); }
+        }
+        
+        const messages = await Promise.all(channelPosts.map(async p => {
+            let mediaHtml = '', reactionsHtml = '';
+            if (p.photo) {
+                const file = await fetchFromAPI(`getFile?file_id=${p.photo[p.photo.length - 1].file_id}`);
+                mediaHtml = `<div class="media"><img src="https://api.telegram.org/file/bot${TOKEN}/${file.file_path}" oncontextmenu="return false;"></div>`;
+            } else if (p.video) {
+                const file = await fetchFromAPI(`getFile?file_id=${p.video.file_id}`);
+                mediaHtml = `<div class="media"><video controls controlslist="nodownload" oncontextmenu="return false;" src="https://api.telegram.org/file/bot${TOKEN}/${file.file_path}"></video></div>`;
+            }
+            if (p.reactions && p.reactions.reactions) {
+                reactionsHtml = `<div class="reactions">${p.reactions.reactions.map(r => `<button class="reaction"><span class="reaction-emoji">${r.emoji}</span><span class="reaction-count">${r.count}</span></button>`).join('')}</div>`;
+            }
+            return { id: p.message_id, user: p.chat.title, text: p.text || p.caption || "", media: mediaHtml, reactions: reactionsHtml, date: p.date };
+        }));
+
+        const currentApiIds = new Set(messages.map(m => m.id));
+        document.querySelectorAll('.msg[data-id]').forEach(msgEl => {
+            if (!currentApiIds.has(parseInt(msgEl.dataset.id, 10))) msgEl.remove();
+        });
+
+        messages.sort((a, b) => a.date - b.date).forEach(msg => {
+            if (!document.querySelector(`[data-id='${msg.id}']`)) {
+                const div = document.createElement("div");
+                div.className = "msg";
+                div.dataset.id = msg.id;
+                const ownerBadge = (channelInfo.title === "ItzXery Official") ? `<span class="owner-badge">${ICONS.crown} Owner</span>` : '';
+                div.innerHTML = `
+                    <div class="msg-header">
+                        ${channelInfo.profile_photo_url ? `<img src="${channelInfo.profile_photo_url}" class="profile-pic" alt="Profil">` : ''}
+                        <div class="user-info">
+                            <div class="user">${msg.user} ${ownerBadge}</div>
+                            <div class="timestamp">${new Date(msg.date * 1000).toLocaleString('id-ID')}</div>
+                        </div>
+                    </div>
+                    <div class="text">${formatText(msg.text)}</div>
+                    ${msg.media}
+                    ${msg.reactions}
+                `;
+                feed.prepend(div);
+                setTimeout(() => div.classList.add("show"), 100);
+            }
+        });
+        
+        twemoji.parse(feed); // Process emojis for Twemoji
+        
+        if (feed.children.length === 0 && !isFirstLoad) {
+            setNotification('', "Belum ada pesan di channel.");
+        }
+      } catch (err) {
+        console.error("Gagal memuat pesan:", err.message);
+        if (isFirstLoad) {
+            setNotification(ICONS.error, "Gagal mengambil data");
+            isFirstLoad = false;
+        }
+        // Don't clear feed on subsequent errors, just try again later.
+      }
+    }
+
+    // --- Settings & UI Logic ---
+    function toggleTheme() {
+        document.body.classList.toggle('theme-dark');
+        const theme = document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+        localStorage.setItem('channel-feed-theme', theme);
+    }
+    
+    function clearFeed() {
+        setNotification('', 'Semua pesan telah dihapus dari tampilan.');
+        settingsMenu.classList.remove('active');
+    }
+
+    function toggleArchive() {
+        feed.classList.toggle('archived');
+        const archiveBtn = document.getElementById('archive-btn');
+        archiveBtn.querySelector('span').textContent = feed.classList.contains('archived') ? 'Tampilkan' : 'Arsipkan';
+        settingsMenu.classList.remove('active');
+    }
+    
+    // Event Listeners
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsMenu.classList.toggle('active');
+        boostPopup.classList.remove('active');
     });
 
+    boostBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        boostPopup.classList.toggle('active');
+        settingsMenu.classList.remove('active');
+    });
+
+    document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
+    document.getElementById('clear-feed-btn').addEventListener('click', clearFeed);
+    document.getElementById('archive-btn').addEventListener('click', toggleArchive);
+    
+    document.getElementById('copy-boost-link-btn').addEventListener('click', () => {
+        const linkInput = boostPopup.querySelector('input');
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            const btn = document.getElementById('copy-boost-link-btn');
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Berhasil Disalin!`;
+            setTimeout(() => {
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-5zm0 16H8V7h11v14z"/></svg> Salin Link`;
+            }, 2000);
+        });
+    });
+
+    window.addEventListener('click', () => { // Close menus if clicked outside
+        settingsMenu.classList.remove('active');
+        boostPopup.classList.remove('active');
+    });
+
+    // --- Initialization ---
+    if (localStorage.getItem('channel-feed-theme') === 'dark') {
+        document.body.classList.add('theme-dark');
+    }
+
+    loadMessages();
+    setInterval(loadMessages, 5000);
   </script>
 </body>
 </html>
