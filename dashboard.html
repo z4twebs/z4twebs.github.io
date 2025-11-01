@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Social Post</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    
+    <!-- ==================== BAGIAN CSS ==================== -->
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg-color: #ffffff;
+            --text-color: #050505;
+            --text-secondary-color: #65676b;
+            --primary-color: #1877f2;
+            --border-color: #e0e0e0;
+            --header-bg: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --success-color: #4caf50;
+        }
+
+        body.dark-theme {
+            --bg-color: #18191a;
+            --card-bg-color: #242526;
+            --text-color: #e4e6eb;
+            --text-secondary-color: #b0b3b8;
+            --primary-color: #2d88ff;
+            --border-color: #3e4042;
+            --header-bg: #242526;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --success-color: #66bb6a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- STRUKTUR UTAMA & NAVIGASI --- */
+        .main-container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+        .view { display: none; }
+        .view.active { display: block; animation: viewFadeIn 0.5s ease; }
+        @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        header {
+            background-color: var(--header-bg); box-shadow: 0 2px 4px var(--shadow-color);
+            padding: 0 2rem; display: flex; justify-content: space-between; align-items: center;
+            height: 60px; position: sticky; top: 0; z-index: 100;
+        }
+        header .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+        header nav { display: flex; align-items: center; gap: 1rem; }
+        .nav-btn {
+            background: none; border: none; cursor: pointer; color: var(--text-secondary-color);
+            padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .nav-btn:hover { background-color: rgba(0,0,0,0.05); }
+        .nav-btn.active { color: var(--primary-color); }
+        .nav-btn.owner-only { color: var(--primary-color); }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        .user-profile img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .user-profile #user-name.owner::after { content: '👑'; margin-left: 5px; font-size: 1rem; }
+
+        /* --- DASHBOARD VIEW (POSTINGAN) --- */
+        #dashboard-posts { display: grid; gap: 1.5rem; }
+        .post-card {
+            background-color: var(--card-bg-color); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px var(--shadow-color);
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .post-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px var(--shadow-color); }
+        .post-header { display: flex; align-items: center; margin-bottom: 1rem; }
+        .post-author { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--text-color); }
+        .post-author img { width: 32px; height: 32px; border-radius: 50%; }
+        .post-card h2 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-color);}
+        .post-card p { color: var(--text-secondary-color); margin-bottom: 1rem;}
+        .post-card .post-meta { font-size: 0.8rem; color: var(--text-secondary-color); text-align: right; margin-top: 1rem;}
+        .post-card pre {
+            background-color: #282c34; color: #abb2bf; padding: 1rem; border-radius: 8px;
+            white-space: pre-wrap; word-break: break-all; max-height: 150px; overflow: hidden; position: relative;
+        }
+        .post-card pre::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(transparent, #282c34); }
+        
+        /* --- PROFILE VIEW --- */
+        .profile-card { background-color: var(--card-bg-color); border-radius: 12px; padding: 2rem; text-align: center; }
+        .profile-avatar { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1rem; object-fit: cover; border: 4px solid var(--card-bg-color); box-shadow: 0 0 10px var(--shadow-color); }
+        #profile-view-name { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+        #profile-view-email { color: var(--text-secondary-color); margin-bottom: 1rem; font-size: 0.9rem; }
+        #profile-view-bio { line-height: 1.6; margin-bottom: 2rem; }
+        .stats-container { display: flex; justify-content: center; gap: 2rem; color: var(--text-secondary-color); }
+        .stat-item { text-align: center; }
+        .stat-item span { font-weight: 600; font-size: 1.25rem; display: block; color: var(--text-color); }
+
+        /* --- SETTINGS VIEW --- */
+        .settings-section { background-color: var(--card-bg-color); border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; }
+        .settings-section h2 { font-size: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);
+            background-color: var(--bg-color); color: var(--text-color); font-family: 'Inter', sans-serif;
+        }
+        .theme-switcher { display: flex; justify-content: space-between; align-items: center; }
+        /* Toggle Switch CSS */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .save-btn {
+            padding: 12px 24px; background-color: var(--primary-color); color: white; border: none;
+            border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s;
+        }
+        .save-btn:hover { background-color: #166fe5; }
+        #save-status { margin-left: 1rem; color: var(--success-color); font-weight: 500; opacity: 0; transition: opacity 0.3s;}
+
+        /* --- MODAL UPLOAD (Tidak banyak berubah) --- */
+        .modal { display: none; /* ... (sisanya sama) ... */ }
+        .modal-content { /* ... */ }
+        /* ... (sisa style modal) ... */
+
+    </style>
+</head>
+<body class="light-theme">
+
+    <!-- ==================== BAGIAN HTML ==================== -->
+    <header>
+        <div class="logo">Social Post</div>
+        <nav>
+            <button id="dashboard-btn" class="nav-btn active" title="Dashboard">
+                <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </button>
+            <button id="profile-btn" class="nav-btn" title="Profil Publik">
+                <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </button>
+            <button id="settings-btn" class="nav-btn" title="Pengaturan">
+                <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+            <button id="upload-btn" class="nav-btn owner-only" style="display: none;" title="Upload">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </button>
+            <div class="user-profile">
+                <span id="user-name">Memuat...</span>
+                <img id="user-photo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Foto Profil">
+            </div>
+             <button id="logout-btn" class="nav-btn" title="Keluar">
+                <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            </button>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <!-- VIEW 1: DASHBOARD -->
+        <section id="dashboard-view" class="view active">
+            <div id="dashboard-posts">
+                <!-- Postingan akan dimuat di sini oleh JavaScript -->
+            </div>
+        </section>
+
+        <!-- VIEW 2: PROFIL PUBLIK -->
+        <section id="profile-view" class="view">
+            <div class="profile-card">
+                <img id="profile-view-avatar" src="" alt="Foto Profil" class="profile-avatar">
+                <h1 id="profile-view-name">Nama Pengguna</h1>
+                <p id="profile-view-email">email@pengguna.com</p>
+                <p id="profile-view-bio">Bio belum diatur. Anda dapat mengaturnya di halaman Pengaturan.</p>
+                <div class="stats-container">
+                    <div class="stat-item"><span>0</span> Mengikuti</div>
+                    <div class="stat-item"><span>0</span> Pengikut</div>
+                </div>
+            </div>
+             <!-- TODO: Di masa depan, postingan pengguna bisa ditampilkan di sini -->
+        </section>
+
+        <!-- VIEW 3: PENGATURAN -->
+        <section id="settings-view" class="view">
+            <div class="settings-section">
+                <h2>Profil</h2>
+                <form id="profile-settings-form">
+                    <div class="form-group">
+                        <label for="settings-name">Nama Tampilan</label>
+                        <input type="text" id="settings-name" placeholder="Masukkan nama Anda">
+                    </div>
+                    <div class="form-group">
+                        <label for="settings-bio">Bio</label>
+                        <textarea id="settings-bio" rows="3" placeholder="Ceritakan sedikit tentang diri Anda"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="settings-photo">Ganti Foto Profil</label>
+                        <input type="file" id="settings-photo" accept="image/*">
+                    </div>
+                </form>
+            </div>
+
+            <div class="settings-section">
+                <h2>Tampilan</h2>
+                <div class="form-group theme-switcher">
+                    <label for="theme-toggle">Mode Gelap</label>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button id="save-settings-btn" class="save-btn">Simpan Perubahan</button>
+            <span id="save-status">Tersimpan!</span>
+        </section>
+    </main>
+    
+    <!-- Modal Upload tetap sama -->
+    <div id="upload-modal" class="modal"> <!-- ... (Tidak ada perubahan pada HTML modal) ... --> </div>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    
+    <!-- ==================== BAGIAN JAVASCRIPT ==================== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const firebaseConfig = { /* ... (Konfigurasi Firebase Anda tetap sama) ... */ };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        const storage = firebase.storage();
+        const OWNER_EMAIL = "zatrmulus0@gmail.com";
+
+        // === Referensi Elemen UI ===
+        const allViews = document.querySelectorAll('.view');
+        const allNavButtons = document.querySelectorAll('.nav-btn');
+        const dashboardBtn = document.getElementById('dashboard-btn');
+        const profileBtn = document.getElementById('profile-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        
+        // Elemen Header
+        const userNameEl = document.getElementById('user-name');
+        const userPhotoEl = document.getElementById('user-photo');
+
+        // === Navigasi Halaman ===
+        function navigateTo(viewId) {
+            allViews.forEach(view => view.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            allNavButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.nav-btn[id="${viewId.replace('-view', '-btn')}"]`).classList.add('active');
+        }
+        
+        dashboardBtn.addEventListener('click', () => navigateTo('dashboard-view'));
+        profileBtn.addEventListener('click', () => {
+            populateProfileView();
+            navigateTo('profile-view');
+        });
+        settingsBtn.addEventListener('click', () => {
+            populateSettingsForm();
+            navigateTo('settings-view');
+        });
+
+        // === Otentikasi dan Inisialisasi ===
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                initializeUser(user);
+                fetchPosts();
+                loadTheme();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+        
+        function initializeUser(user) {
+            updateUserInfo(user);
+            if (user.email === OWNER_EMAIL) {
+                uploadBtn.style.display = 'flex';
+                userNameEl.classList.add('owner');
+            }
+        }
+        
+        // === Logika Tampilan & Data Pengguna ===
+        async function updateUserInfo(user) {
+            const userDataRef = db.ref(`users/${user.uid}`);
+            const snapshot = await userDataRef.once('value');
+            const userData = snapshot.val() || {};
+
+            if (user.isAnonymous) {
+                userNameEl.textContent = 'Tamu';
+                userPhotoEl.src = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
+            } else {
+                const nameFromEmail = user.email.split('@')[0];
+                userNameEl.textContent = user.displayName || nameFromEmail;
+                userPhotoEl.src = user.photoURL || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
+            }
+        }
+
+        async function populateProfileView() {
+            const user = auth.currentUser;
+            const userDataRef = db.ref(`users/${user.uid}`);
+            const snapshot = await userDataRef.once('value');
+            const userData = snapshot.val() || {};
+
+            document.getElementById('profile-view-avatar').src = user.photoURL || userPhotoEl.src;
+            document.getElementById('profile-view-name').textContent = user.displayName || userNameEl.textContent;
+            document.getElementById('profile-view-email').textContent = (user.email === OWNER_EMAIL) ? "[Email Tersembunyi]" : user.email;
+            document.getElementById('profile-view-bio').textContent = userData.bio || "Bio belum diatur.";
+        }
+        
+        async function populateSettingsForm() {
+            const user = auth.currentUser;
+            const userDataRef = db.ref(`users/${user.uid}`);
+            const snapshot = await userDataRef.once('value');
+            const userData = snapshot.val() || {};
+            
+            document.getElementById('settings-name').value = user.displayName || '';
+            document.getElementById('settings-bio').value = userData.bio || '';
+        }
+
+        logoutBtn.addEventListener('click', () => auth.signOut());
+
+        // === Logika Pengaturan (Settings) ===
+        const themeToggle = document.getElementById('theme-toggle');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        
+        function applyTheme(theme) {
+            document.body.classList.toggle('dark-theme', theme === 'dark');
+            themeToggle.checked = (theme === 'dark');
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+        }
+        
+        themeToggle.addEventListener('change', () => {
+            const newTheme = themeToggle.checked ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        });
+        
+        saveSettingsBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            const newName = document.getElementById('settings-name').value;
+            const newBio = document.getElementById('settings-bio').value;
+            const newPhotoFile = document.getElementById('settings-photo').files[0];
+
+            // Tampilkan status "Saving..." jika perlu
+            const statusEl = document.getElementById('save-status');
+
+            try {
+                // Update nama tampilan
+                if (newName !== user.displayName) {
+                    await user.updateProfile({ displayName: newName });
+                }
+
+                // Update bio di Realtime Database
+                await db.ref(`users/${user.uid}`).update({ bio: newBio });
+
+                // Update foto profil jika ada file baru
+                if (newPhotoFile) {
+                    const photoRef = storage.ref(`profile-pictures/${user.uid}`);
+                    const snapshot = await photoRef.put(newPhotoFile);
+                    const photoURL = await snapshot.ref.getDownloadURL();
+                    await user.updateProfile({ photoURL: photoURL });
+                }
+
+                // Perbarui UI dan tampilkan pesan sukses
+                await updateUserInfo(user);
+                statusEl.style.opacity = '1';
+                setTimeout(() => { statusEl.style.opacity = '0'; }, 2000);
+
+            } catch (error) {
+                console.error("Error saving settings: ", error);
+                alert("Gagal menyimpan perubahan: " + error.message);
+            }
+        });
+        
+        // === Logika Postingan (Dashboard) ===
+        // ... (Kode untuk fetchPosts, createPostCard, upload modal, dll. tetap sama persis seperti sebelumnya) ...
+        const dashboardPostsContainer = document.getElementById('dashboard-posts');
+        function fetchPosts() { /* ... kode fetchPosts dari jawaban sebelumnya ... */ }
+        function createPostCard(postData) { /* ... kode createPostCard dari jawaban sebelumnya ... */ }
+        function escapeHtml(text) { /* ... kode escapeHtml dari jawaban sebelumnya ... */ }
+        // ... (Event listener untuk upload modal juga tetap sama) ...
+    });
+    </script>
+</body>
+</html>

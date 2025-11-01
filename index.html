@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selamat Datang di Social Post</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- ==================== BAGIAN CSS ==================== -->
+    <style>
+        :root {
+            --background-start: #111827;
+            --background-end: #1F2937;
+            --card-background: rgba(31, 41, 55, 0.6);
+            --text-primary: #F9FAFB;
+            --text-secondary: #9CA3AF;
+            --accent-color: #3B82F6;
+            --border-color: rgba(107, 114, 128, 0.3);
+            --shadow-color: rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+        }
+
+        .login-box {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transform: translateY(0);
+            opacity: 1;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .login-box h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .login-box p {
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        .login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        
+        .login-btn svg {
+            margin-right: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .login-btn:hover svg {
+            transform: scale(1.1);
+        }
+
+        .google {
+            background-color: #FFFFFF;
+            color: #1F2937;
+            border-color: #D1D5DB;
+        }
+        .google:hover {
+            background-color: #F9FAFB;
+        }
+
+        .guest {
+            background-color: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .guest:hover {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .rekomendasi {
+            margin-left: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== BAGIAN HTML ==================== -->
+    <div class="login-container">
+        <div class="login-box">
+            <h1>Social Post</h1>
+            <p>Platform untuk berbagi potongan kode, teks, dan tautan secara publik dengan mudah.</p>
+            
+            <button id="login-google-btn" class="login-btn google">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.03,4.73 15.69,5.36 16.95,6.45L19.22,4.22C17.27,2.53 14.9,1.5 12.19,1.5C7.03,1.5 3,5.5 3,12C3,18.5 7.03,22.5 12.19,22.5C17.6,22.5 21.5,18.33 21.5,12.33C21.5,11.76 21.43,11.43 21.35,11.1Z"/></svg>
+                Masuk dengan Google
+            </button>
+            
+            <button id="login-guest-btn" class="login-btn guest">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Lanjutkan sebagai Tamu <span class="rekomendasi">Rekomendasi</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    
+    <!-- ==================== BAGIAN JAVASCRIPT ==================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Konfigurasi Firebase Anda
+            const firebaseConfig = {
+                apiKey: "AIzaSyC1nH7S3H6UXBNcRjx4wITwR5i0n8npG7s",
+                authDomain: "socialpost-b521a.firebaseapp.com",
+                databaseURL: "https://socialpost-b521a-default-rtdb.firebaseio.com",
+                projectId: "socialpost-b521a",
+                storageBucket: "socialpost-b521a.appspot.com",
+                messagingSenderId: "1089734629266",
+                appId: "1:1089734629266:web:6045eee1017b91bf5c534b",
+                measurementId: "G-D3W02XJR9L"
+            };
+
+            // Inisialisasi Firebase
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+
+            const googleBtn = document.getElementById('login-google-btn');
+            const guestBtn = document.getElementById('login-guest-btn');
+
+            // Cek jika pengguna sudah login, langsung arahkan ke dashboard
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    console.log("Pengguna sudah login, mengarahkan ke dashboard...");
+                    window.location.href = 'dashboard.html';
+                }
+            });
+
+            if (googleBtn) {
+                googleBtn.addEventListener('click', () => {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    auth.signInWithPopup(provider)
+                        .then(result => {
+                            console.log('Login Google berhasil:', result.user);
+                            // Pengalihan akan ditangani oleh onAuthStateChanged
+                        })
+                        .catch(error => {
+                            console.error('Error login Google:', error);
+                            alert('Gagal login dengan Google: ' + error.message);
+                        });
+                });
+            }
+
+            if (guestBtn) {
+                guestBtn.addEventListener('click', () => {
+                    auth.signInAnonymously()
+                        .then(result => {
+                            console.log('Login Tamu berhasil:', result.user);
+                            // Pengalihan akan ditangani oleh onAuthStateChanged
+                        })
+                        .catch(error => {
+                            console.error('Error login Tamu:', error);
+                            alert('Gagal login sebagai tamu: ' + error.message);
+                        });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
